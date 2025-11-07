@@ -183,6 +183,8 @@ export default class PseudocodePlugin extends Plugin {
     // 获取伪代码源码
     const code = this.getBlockPseudocodeCode(blockElement).trim();
 
+    console.log('--code:', code);
+
     // 创建编辑器
     const editorContainer = dialog.element.querySelector(".edit-dialog-editor") as HTMLElement;
     const editor = new Editor(editorContainer, code);
@@ -200,6 +202,8 @@ export default class PseudocodePlugin extends Plugin {
       pseudocodeConfig.blockEnding = (dialog.element.querySelector("[data-type=block-ending]") as HTMLSelectElement).value;
       pseudocodeConfig.scopeLine = (dialog.element.querySelector("[data-type=scope-line]") as HTMLSelectElement).value;
       const code = editor.getContent().trim();
+
+      console.log('v---code', code);
 
       this.setAutoAlgorithmNumber(blockElement, pseudocodeConfig);
       const compileResult = compilePseudocode(code, pseudocodeConfig);
