@@ -93,7 +93,7 @@ export default class PseudocodePlugin extends Plugin {
         this.updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
         this.updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
           this.updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
-          const blockElement = document.querySelector(`protyle-wysiwyg [data-node-id="${blockID}"]`) as HTMLElement;
+          const blockElement = document.querySelector(`.protyle-wysiwyg [data-node-id="${blockID}"]`) as HTMLElement;
           if (blockElement) {
             this.openEditDialog(blockElement, false, false);
           }
@@ -431,7 +431,7 @@ export default class PseudocodePlugin extends Plugin {
   }
 
   private getBlockPseudocodeCode(blockElement: HTMLElement): string {
-    return blockElement.querySelector(".hljs")?.textContent || "";
+    return blockElement.querySelector(".hljs [contenteditable]")?.textContent || "";
   }
 
   private setAutoAlgorithmNumber(blockElement: HTMLElement, pseudocodeConfig: IPseudocodeConfig) {
