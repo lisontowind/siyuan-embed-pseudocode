@@ -84,11 +84,19 @@ export default class PseudocodePlugin extends Plugin {
         const code = "";
         const blockID = nodeElement.getAttribute("data-node-id");
         const pseudocodeConfig = this.getDefaultPseudocodeConfig();
+        console.log('pseudocodeConfig before', nodeElement, pseudocodeConfig);
         this.setAutoAlgorithmNumber(nodeElement, pseudocodeConfig);
+        console.log('pseudocodeConfig after', pseudocodeConfig);
+        console.log('code', code);
         const compileResult = compilePseudocode(code, pseudocodeConfig);
+        console.log('compileResult:', compileResult);
         this.updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
         this.updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
           this.updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
+          const blockElement = document.querySelector(`[data-node-id="${blockID}"]`) as HTMLElement;
+          if (blockElement) {
+            this.openEditDialog(blockElement, false, false);
+          }
         });
       },
     }];
@@ -128,6 +136,7 @@ export default class PseudocodePlugin extends Plugin {
   }
 
   public async openEditDialog(blockElement: HTMLElement, autoCompile?: boolean, autoClose?: boolean) {
+    console.log('openEditDialog', blockElement);
     const editDialogHTML = `
 <div class="pseudocode-edit-dialog">
     <div class="edit-dialog-header resize__move"></div>
