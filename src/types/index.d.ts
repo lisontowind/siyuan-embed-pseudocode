@@ -123,6 +123,7 @@ interface Window {
     user: any;
     ws: any;
     languages: any;
+    reqIds: any;
     config: {
       appearance: {
         mode: number;
@@ -133,6 +134,7 @@ interface Window {
   _sy_plugin_sample: {
     [key: string]: any;
   };
+  pseudocode: any;
 };
 
 
@@ -146,6 +148,19 @@ enum SyFrontendTypes {
   'browser-desktop' = 'browser-desktop',
   // 浏览器 - 移动端
   'browser-mobile' = 'browser-mobile',
+}
+
+interface IWebSocketData {
+    cmd?: string;
+    callback?: string;
+    data?: any;
+    msg: string;
+    code: number;
+    sid?: string;
+}
+
+interface IObject {
+    [key: string]: string;
 }
 
 interface IPseudocodeConfig {

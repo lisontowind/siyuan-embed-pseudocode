@@ -35,7 +35,7 @@ export default defineConfig(({
   console.log(`\nPlugin will build to:\n${devDistDir}`)
 
   const args = minimist(process.argv.slice(2))
-  const isWatch = args.watch || args.w || false
+  const isWatch = process.argv.includes('--dev') || args.watch || args.w || false
   const distDir = isWatch ? devDistDir : "./dist"
 
   console.log()
@@ -49,36 +49,7 @@ export default defineConfig(({
       },
     },
 
-    plugins: [
-      viteStaticCopy({
-        targets: [
-          {
-            src: "./README*.md",
-            dest: "./",
-          },
-          {
-            src: "./icon.png",
-            dest: "./",
-          },
-          {
-            src: "./preview.png",
-            dest: "./",
-          },
-          {
-            src: "./plugin.json",
-            dest: "./",
-          },
-          {
-            src: "./src/i18n/**",
-            dest: "./i18n/",
-          },
-          {
-            src: "./src/libs/pseudocode/",
-            dest: "./libs/",
-          },
-        ],
-      }),
-    ],
+    plugins: [],
 
     // https://github.com/vitejs/vite/issues/1930
     // https://vitejs.dev/guide/env-and-mode.html#env-files
@@ -92,7 +63,7 @@ export default defineConfig(({
     build: {
       // 输出路径
       outDir: distDir,
-      emptyOutDir: false,
+      emptyOutDir: !isWatch,
 
       // 构建后是否生成 source map 文件
       sourcemap: false,
@@ -105,39 +76,14 @@ export default defineConfig(({
 
       lib: {
         // Could also be a dictionary or array of multiple entry points
-        entry: resolve(__dirname, "src/index.ts"),
+        entry: resolve(__dirname, "src/daemon.ts"),
         // the proper extensions will be added
-        fileName: "index",
-        formats: ["cjs"],
+        fileName: "daemon",
+        formats: ["umd"],
+        name: "pseudocodeDaemon",
       },
       rollupOptions: {
-        plugins: [
-          ...(isWatch
-            ? [
-                livereload(devDistDir),
-                {
-                  // 监听静态资源文件
-                  name: "watch-external",
-                  async buildStart() {
-                    const files = await fg([
-                      "src/i18n/*.json",
-                      "./README*.md",
-                      "./plugin.json",
-                    ])
-                    for (const file of files) {
-                      this.addWatchFile(file)
-                    }
-                  },
-                },
-              ]
-            : [
-                zipPack({
-                  inDir: "./dist",
-                  outDir: "./",
-                  outFileName: "package.zip",
-                }),
-              ]),
-        ],
+        plugins: [],
 
         // make sure to externalize deps that shouldn't be bundled
         // into your library
@@ -150,6 +96,9 @@ export default defineConfig(({
               return "index.css"
             }
             return assetInfo.name
+          },
+          globals: {
+            siyuan: "siyuan",
           },
         },
       },

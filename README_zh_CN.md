@@ -68,6 +68,7 @@
 - [x] CodeMirror编辑器（语法高亮、代码自动补全、错误提示）
 - [x] 设置伪代码块的显示风格
 - [x] 以markdown原生代码块存储伪代码
++ [x] PDF导出支持
 
 > 如有更多需求/建议欢迎[在GitHub仓库中提issue](https://github.com/YuxinZhaozyx/siyuan-embed-pseudocode/issues)或[在思源笔记社区中发帖](https://ld246.com/article/1762459066676)
 
@@ -84,6 +85,9 @@
 
 ## 更新日志
 
++ v0.5.1
+    + 修复缺陷：伪代码总是编译错误的问题
+    + 功能特征：增加PDF导出支持
 + v0.5.0
     + 继承伪代码挂件(siyuan-pseudocode)的所有功能，点击代码块右上角按钮可切换为伪代码视图与编辑伪代码
     + 提供原伪代码挂件转换为新版本插件代码块的功能

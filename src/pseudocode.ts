@@ -1,5 +1,13 @@
-import pseudocode from "pseudocode";
-import "pseudocode/build/pseudocode.min.css";
+import { addScript, addStyle } from "./utils";
+
+export function initPseudocode() {
+  // loadUmdScript("/plugins/siyuan-embed-pseudocode/libs/katex/katex.min.js", 'katex');
+  addScript("/stage/protyle/js/katex/katex.min.css", "protyleKatexStyle");
+  addScript("/stage/protyle/js/katex/katex.min.js", "protyleKatexScript").then(() => {
+    addStyle("/plugins/siyuan-embed-pseudocode/libs/pseudocode/pseudocode.min.css", 'pseudocodeStyle');
+    addScript("/plugins/siyuan-embed-pseudocode/libs/pseudocode/pseudocode.min.js", 'pseudocodeScript');
+  })
+}
 
 export function compilePseudocode(code: string, config: IPseudocodeConfig): IResCompilePseudocode {
   const compileResult: IResCompilePseudocode = {
@@ -24,7 +32,7 @@ export function compilePseudocode(code: string, config: IPseudocodeConfig): IRes
       captionCount: (config.algorithmNumber ? parseInt(config.algorithmNumber) - 1 : parseInt(config._defaultAlgorithmNumber) - 1),
     }
 
-    compileResult.html = pseudocode.renderToString(code, renderOptions);
+    compileResult.html = window.pseudocode.renderToString(code, renderOptions);
     compileResult.ok = true;
   } catch (err) {
     compileResult.ok = false;

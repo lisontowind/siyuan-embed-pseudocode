@@ -66,6 +66,7 @@ For users of the original Pseudocode Widget, this plugin provides a one-click mi
 - [x] CodeMirror editor (syntax highlighting, auto-completion, error hints)
 - [x] Configure rendering style
 - [x] Store pseudocode in markdown native code blocks
++ [x] PDF export support
 
 > If you have additional feature requests or suggestions, feel free to [open an issue on GitHub](https://github.com/YuxinZhaozyx/siyuan-embed-pseudocode/issues) or [post in the SiYuan community](https://ld246.com/article/1762459066676).
 
@@ -85,6 +86,9 @@ Click the menu button on the left side of a Pseudocode Widget block. An option l
 
 ## Changelog
 
++ v0.5.1
+    + Fix: compile always fails
+    + Feature: PDF export support
 + v0.5.0
     + Inherits all core features from the original Pseudocode Widget (`siyuan-pseudocode`)
     + Added ability to edit and show pseudocode via the top-right menu button

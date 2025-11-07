@@ -3,14 +3,24 @@ import {
   Plugin,
   getFrontend,
   fetchPost,
-  fetchSyncPost,
   IWebSocketData,
 } from "siyuan";
 import "@/index.scss";
 import PluginInfoString from '@/../plugin.json'
 import { Editor } from "@/editor";
-import { compilePseudocode } from "@/pseudocode";
-
+import { initPseudocode, compilePseudocode } from "@/pseudocode";
+import {
+  getBlockPseudocodeCode,
+  getDefaultPseudocodeConfig,
+  getBlockPseudocodeConfigByElement,
+  getBlockPseudocodeConfigByID,
+  setAutoAlgorithmNumber,
+  updatePseudocodeBlockData,
+  updatePseudocodeElements,
+  updatePseudocodeViewAttribute,
+  switchPseudocodeView,
+  setAutoCompileMuatationObserver,
+} from "@/main";
 
 let PluginInfo = {
   version: '',
@@ -45,36 +55,11 @@ export default class PseudocodePlugin extends Plugin {
   async onload() {
     this.initMetaInfo();
 
-    this._mutationObserver = new MutationObserver(mutations => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach(node => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const blockElement = node as HTMLElement;
-              if (blockElement.tagName === "DIV" &&
-                blockElement.getAttribute('data-type') === 'NodeCodeBlock' &&
-                blockElement.classList.contains('code-block') &&
-                blockElement.getAttribute('custom-view') === 'pseudocode' &&
-                blockElement.querySelector(".protyle-action__language")?.textContent === 'pseudocode'
-              ) {
-                const blockID = blockElement.getAttribute("data-node-id");
-                const code = this.getBlockPseudocodeCode(blockElement);
-                const pseudocodeConfig = this.getBlockPseudocodeConfigByElement(blockElement);
-                this.setAutoAlgorithmNumber(blockElement, pseudocodeConfig);
-                const compileResult = compilePseudocode(code, pseudocodeConfig);
-                this.updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
-                this.updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
-              }
-            }
-          });
-        }
-      }
-    });
+    this.setPdfScript();
 
-    this._mutationObserver.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    initPseudocode();
+
+    this._mutationObserver = setAutoCompileMuatationObserver(document.body);
 
     this.protyleSlash = [{
       filter: ["pseudocode"],
@@ -83,16 +68,12 @@ export default class PseudocodePlugin extends Plugin {
       callback: (protyle, nodeElement) => {
         const code = "";
         const blockID = nodeElement.getAttribute("data-node-id");
-        const pseudocodeConfig = this.getDefaultPseudocodeConfig();
-        console.log('pseudocodeConfig before', nodeElement, pseudocodeConfig);
-        this.setAutoAlgorithmNumber(nodeElement, pseudocodeConfig);
-        console.log('pseudocodeConfig after', pseudocodeConfig);
-        console.log('code', code);
+        const pseudocodeConfig = getDefaultPseudocodeConfig();
+        setAutoAlgorithmNumber(nodeElement, pseudocodeConfig);
         const compileResult = compilePseudocode(code, pseudocodeConfig);
-        console.log('compileResult:', compileResult);
-        this.updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
-        this.updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
-          this.updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
+        updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
+        updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
+          updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
           const blockElement = document.querySelector(`.protyle-wysiwyg [data-node-id="${blockID}"]`) as HTMLElement;
           if (blockElement) {
             this.openEditDialog(blockElement, false, false);
@@ -111,6 +92,7 @@ export default class PseudocodePlugin extends Plugin {
   }
 
   onunload() {
+    if (this._mutationObserver) this._mutationObserver.disconnect();
     if (this._clickBlockIconHandler) this.eventBus.off("click-blockicon", this._clickBlockIconHandler);
     if (this._globalKeyDownHandler) document.documentElement.removeEventListener("keydown", this._globalKeyDownHandler);
   }
@@ -136,7 +118,6 @@ export default class PseudocodePlugin extends Plugin {
   }
 
   public async openEditDialog(blockElement: HTMLElement, autoCompile?: boolean, autoClose?: boolean) {
-    console.log('openEditDialog', blockElement);
     const editDialogHTML = `
 <div class="pseudocode-edit-dialog">
     <div class="edit-dialog-header resize__move"></div>
@@ -173,7 +154,7 @@ export default class PseudocodePlugin extends Plugin {
     });
 
     const blockID = blockElement.getAttribute("data-node-id");
-    const pseudocodeConfig = await this.getBlockPseudocodeConfigByID(blockID);
+    const pseudocodeConfig = await getBlockPseudocodeConfigByID(blockID);
     (dialog.element.querySelector("[data-type=algorithm-label]") as HTMLInputElement).value = pseudocodeConfig.algorithmLabel;
     (dialog.element.querySelector("[data-type=algorithm-number]") as HTMLInputElement).value = pseudocodeConfig.algorithmNumber;
     (dialog.element.querySelector("[data-type=line-number]") as HTMLSelectElement).value = pseudocodeConfig.lineNumber;
@@ -181,9 +162,7 @@ export default class PseudocodePlugin extends Plugin {
     (dialog.element.querySelector("[data-type=scope-line]") as HTMLSelectElement).value = pseudocodeConfig.scopeLine;
 
     // 获取伪代码源码
-    const code = this.getBlockPseudocodeCode(blockElement).trim();
-
-    console.log('--code:', code);
+    const code = getBlockPseudocodeCode(blockElement).trim();
 
     // 创建编辑器
     const editorContainer = dialog.element.querySelector(".edit-dialog-editor") as HTMLElement;
@@ -203,14 +182,10 @@ export default class PseudocodePlugin extends Plugin {
       pseudocodeConfig.scopeLine = (dialog.element.querySelector("[data-type=scope-line]") as HTMLSelectElement).value;
       const code = editor.getContent().trim();
 
-      console.log('v---code', code);
-
-      this.setAutoAlgorithmNumber(blockElement, pseudocodeConfig);
-      console.log('v---pseudocodeConfig', pseudocodeConfig);
+      setAutoAlgorithmNumber(blockElement, pseudocodeConfig);
       const compileResult = compilePseudocode(code, pseudocodeConfig);
-      console.log('v---compileResult', compileResult);
-      this.updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
-        this.updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
+      updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
+        updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
       });
 
       dialog.element.querySelector("[data-action=success]").classList.toggle("fn__none", !compileResult.ok);
@@ -238,73 +213,6 @@ export default class PseudocodePlugin extends Plugin {
     if (autoCompile) compileHandler();
   }
 
-  public getPlaceholderContent(errorMessage: string): string {
-    let content = `<div class="ft__error" align="center">pseudocode render error:<br>${errorMessage}</div>`;
-    return content;
-  }
-
-  public updatePseudocodeBlockData(blockID: string, code: string, config: IPseudocodeConfig, callback: () => void) {
-    fetchPost('/api/block/updateBlock', {
-      id: blockID,
-      data: `\`\`\`pseudocode\n${code}\n\`\`\``,
-      dataType: "markdown",
-    }, () => {
-      fetchPost("/api/attr/setBlockAttrs", {
-        id: blockID,
-        attrs: {
-          "custom-view": config.view,
-          "custom-algorithm-label": config.algorithmLabel,
-          "custom-algorithm-number": config.algorithmNumber,
-          "custom-line-number": config.lineNumber,
-          "custom-block-ending": config.blockEnding,
-          "custom-scope-line": config.scopeLine,
-        },
-      }, () => {
-        callback();
-      });
-    });
-  }
-
-  private updatePseudocodeElements(blockID: string, config: IPseudocodeConfig, compileResult: IResCompilePseudocode) {
-    if (compileResult) {
-      document.querySelectorAll(`.protyle-wysiwyg [data-node-id="${blockID}"]`).forEach((blockElement: HTMLElement) => {
-        if (config.view == "pseudocode") {
-          this.switchPseudocodeView("on", blockElement);
-          const containerElement = blockElement.querySelector(".pseudocode-container") as HTMLElement;
-          if (containerElement) {
-            containerElement.innerHTML = compileResult.ok ? compileResult.html : this.getPlaceholderContent(compileResult.message);
-          }
-        }
-      });
-    }
-  }
-
-  private switchPseudocodeView(mode: "on" | "off", blockElement: HTMLElement) {
-    const codeElement = blockElement.querySelector(".hljs");
-    if (codeElement) {
-      codeElement.classList.toggle("fn__none", mode === "on");
-      blockElement.querySelector(".protyle-action__language").classList.toggle("fn__none", mode === "on");
-      blockElement.setAttribute("custom-view", mode === "on" ? "pseudocode" : "");
-      const containerElement = blockElement.querySelector(".pseudocode-container");
-      if (mode === "on") {
-        if (!containerElement) {
-          codeElement.insertAdjacentHTML('afterend', '<div class="pseudocode-container"></div>');
-        }
-      } else {
-        if (containerElement) containerElement.remove();
-      }
-    }
-  }
-
-  private updatePseudocodeViewAttribute(blockID: string, view: string) {
-    fetchPost("/api/attr/setBlockAttrs", {
-      id: blockID,
-      attrs: {
-        "custom-view": view,
-      }
-    });
-  }
-
   private clickBlockIconHandler({ detail }) {
     if (detail.blockElements.length != 1) return;
     const selectedElement = detail.blockElements[0];
@@ -323,7 +231,7 @@ export default class PseudocodePlugin extends Plugin {
               throw new Error("get block attrs failed");
             };
             if (response.data) {
-              const pseudocodeConfig = this.getDefaultPseudocodeConfig();
+              const pseudocodeConfig = getDefaultPseudocodeConfig();
               const code = response.data["custom-latex-code"] || "";
               pseudocodeConfig.algorithmLabel = response.data["custom-titile-prefix"] || pseudocodeConfig.algorithmLabel;
               pseudocodeConfig.algorithmNumber = response.data["custom-caption-count"] || pseudocodeConfig.algorithmNumber;
@@ -331,11 +239,11 @@ export default class PseudocodePlugin extends Plugin {
               pseudocodeConfig.blockEnding = response.data["custom-block-ending"] || pseudocodeConfig.blockEnding;
               pseudocodeConfig.scopeLine = response.data["custom-scope-line"] || pseudocodeConfig.scopeLine;
 
-              this.setAutoAlgorithmNumber(selectedElement, pseudocodeConfig);
+              setAutoAlgorithmNumber(selectedElement, pseudocodeConfig);
               const compileResult = compilePseudocode(code, pseudocodeConfig);
-              this.updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
-              this.updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
-                this.updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
+              updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
+              updatePseudocodeBlockData(blockID, code, pseudocodeConfig, () => {
+                updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
               });
 
             }
@@ -353,8 +261,8 @@ export default class PseudocodePlugin extends Plugin {
           label: `${this.i18n.turnOffPseudocodeView}`,
           index: 1,
           click: () => {
-            this.updatePseudocodeViewAttribute(selectedElement.getAttribute("data-node-id"), "");
-            this.switchPseudocodeView("off", selectedElement);
+            updatePseudocodeViewAttribute(selectedElement.getAttribute("data-node-id"), "");
+            switchPseudocodeView("off", selectedElement);
           }
         });
       } else {
@@ -366,13 +274,13 @@ export default class PseudocodePlugin extends Plugin {
           index: 1,
           click: () => {
             const blockID = selectedElement.getAttribute("data-node-id");
-            const code = this.getBlockPseudocodeCode(selectedElement);
-            const pseudocodeConfig = this.getBlockPseudocodeConfigByElement(selectedElement);
-            this.setAutoAlgorithmNumber(selectedElement, pseudocodeConfig);
+            const code = getBlockPseudocodeCode(selectedElement);
+            const pseudocodeConfig = getBlockPseudocodeConfigByElement(selectedElement);
+            setAutoAlgorithmNumber(selectedElement, pseudocodeConfig);
             const compileResult = compilePseudocode(code, pseudocodeConfig);
             pseudocodeConfig.view = "pseudocode";
-            this.updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
-            this.updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
+            updatePseudocodeViewAttribute(blockID, pseudocodeConfig.view);
+            updatePseudocodeElements(blockID, pseudocodeConfig, compileResult);
           }
         });
       }
@@ -396,64 +304,11 @@ export default class PseudocodePlugin extends Plugin {
     }
   };
 
-  private getDefaultPseudocodeConfig(): IPseudocodeConfig {
-    return {
-      view: "pseudocode",
-      algorithmLabel: "Algorithm",
-      algorithmNumber: "",
-      lineNumber: "true",
-      blockEnding: "false",
-      scopeLine: "false",
-      _defaultAlgorithmNumber: "1",
-    }
-  }
-
-  private async getBlockPseudocodeConfigByID(blockID: string): Promise<IPseudocodeConfig> {
-    const config = this.getDefaultPseudocodeConfig();
-    const response = await fetchSyncPost("/api/attr/getBlockAttrs", { id: blockID })
-    if (response.code != 0) {
-      throw new Error("get block attrs failed");
-    };
-    if (response.data) {
-      config.view = response.data["custom-view"] || "";
-      config.algorithmLabel = response.data["custom-algorithm-label"] || config.algorithmLabel;
-      config.algorithmNumber = response.data["custom-algorithm-number"] || config.algorithmNumber;
-      config.lineNumber = response.data["custom-line-number"] || config.lineNumber;
-      config.blockEnding = response.data["custom-block-ending"] || config.blockEnding;
-      config.scopeLine = response.data["custom-scope-line"] || config.scopeLine;
-    }
-    return config;
-  }
-
-  private getBlockPseudocodeConfigByElement(blockElement: HTMLElement): IPseudocodeConfig {
-    const config = this.getDefaultPseudocodeConfig();
-    config.view = blockElement.getAttribute("custom-view") || "";
-    config.algorithmLabel = blockElement.getAttribute("custom-algorithm-label") || config.algorithmLabel;
-    config.algorithmNumber = blockElement.getAttribute("custom-algorithm-number") || config.algorithmNumber;
-    config.lineNumber = blockElement.getAttribute("custom-line-number") || config.lineNumber;
-    config.blockEnding = blockElement.getAttribute("custom-block-ending") || config.blockEnding;
-    config.scopeLine = blockElement.getAttribute("custom-scope-line") || config.scopeLine;
-    return config;
-  }
-
-  private getBlockPseudocodeCode(blockElement: HTMLElement): string {
-    return blockElement.querySelector(".hljs [contenteditable]")?.textContent || "";
-  }
-
-  private setAutoAlgorithmNumber(blockElement: HTMLElement, pseudocodeConfig: IPseudocodeConfig) {
-    if (!pseudocodeConfig.algorithmNumber) {
-      let rootElement = blockElement;
-      while (rootElement.parentElement && !rootElement.classList.contains("protyle-wysiwyg")) {
-        rootElement = rootElement.parentElement;
-      }
-      const originType = blockElement.getAttribute("data-type");
-      const originView = blockElement.getAttribute("custom-view");
-      blockElement.setAttribute("data-type", "NodeCodeBlock");
-      blockElement.setAttribute("custom-view", "pseudocode");
-      pseudocodeConfig._defaultAlgorithmNumber = (Array.from(rootElement.querySelectorAll("[data-type='NodeCodeBlock'][custom-view='pseudocode']")).indexOf(blockElement) + 1).toString();
-      blockElement.setAttribute("data-type", originType);
-      blockElement.setAttribute("custom-view", originView);
-    }
+  private setPdfScript() {
+    const injectStyle = document.createElement('style');
+    injectStyle.id = `snippetCSS-pdf-pseudocode`;
+    injectStyle.textContent = `</style><script src="/plugins/siyuan-embed-pseudocode/daemon.js"></script><style>`;
+    document.head.appendChild(injectStyle);
   }
 
 }

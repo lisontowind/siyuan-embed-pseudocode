@@ -8,13 +8,17 @@
   "homepage": "",
   "repository": "",
   "scripts": {
-    "dev": "vite build --watch",
+    "dev": "pnpm dev:daemon && pnpm dev:index",
+    "dev:index": "vite build --watch",
+    "dev:daemon": "vite build --config vite.daemon.config.ts -- --dev",
     "release": "node ./release.js",
     "release:manual": "node ./release.js --mode=manual",
     "release:patch": "node ./release.js --mode=patch",
     "release:minor": "node ./release.js --mode=minor",
     "release:major": "node ./release.js --mode=major",
-    "build": "vite build"
+    "build": "pnpm build:daemon && pnpm build:index",
+    "build:index": "vite build",
+    "build:daemon": "vite build --config vite.daemon.config.ts"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",
@@ -26,14 +30,11 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.6",
     "@uiw/codemirror-theme-vscode": "^4.25.2",
-    "codemirror-lang-latex": "^0.2.0",
-    "pseudocode": "^2.4.1",
-    "vue": "^3.3.8"
+    "codemirror-lang-latex": "^0.2.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.8.1",
     "@types/node": "^20.2.0",
-    "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.22.0",
     "eslint-plugin-format": "^1.0.1",
