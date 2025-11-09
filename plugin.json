@@ -2,7 +2,7 @@
   "name": "siyuan-embed-pseudocode",
   "author": "Yuxin Zhao",
   "url": "https://github.com/YuxinZhaozyx/siyuan-embed-pseudocode",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "minAppVersion": "3.3.0",
   "disabledInPublish": false,
   "backends": [
@@ -12,8 +12,8 @@
     "all"
   ],
   "displayName": {
-    "default": "Pseudocode",
-    "zh_CN": "伪代码"
+    "default": "「Embed Series」Pseudocode",
+    "zh_CN": "「嵌入式系列」伪代码"
   },
   "description": {
     "default": "「Embed Series」Elegantly Writing and Displaying Pseudocode in SiYuan",

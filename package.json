@@ -1,6 +1,6 @@
 {
   "name": "siyuan-embed-pseudocode",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "type": "module",
   "description": "This is a plugin for siyuan",
   "author": "",
@@ -50,5 +50,10 @@
     "vite": "^6.2.1",
     "vite-plugin-static-copy": "^0.15.0",
     "vite-plugin-zip-pack": "^1.0.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "rollup": "4.52.5"
+    }
   }
 }

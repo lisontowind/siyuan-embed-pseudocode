@@ -86,6 +86,8 @@ Click the menu button on the left side of a Pseudocode Widget block. An option l
 
 ## Changelog
 
++ v0.5.4
+    + Update plugin name
 + v0.5.3
     + Fix: render existed pseudocode code fail when boot plugin
     + Optimize: optimize linter of editor
