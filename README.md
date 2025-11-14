@@ -86,6 +86,8 @@ Click the menu button on the left side of a Pseudocode Widget block. An option l
 
 ## Changelog
 
++ v0.5.6
+    + change SiYuan version requirements: >=3.0.0
 + v0.5.5
     + Fix: cut and paste pseudocode code will copy the HTML
     + Feature: type `/伪代码` can also create a new pseudocode block

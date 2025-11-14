@@ -2,8 +2,8 @@
   "name": "siyuan-embed-pseudocode",
   "author": "Yuxin Zhao",
   "url": "https://github.com/YuxinZhaozyx/siyuan-embed-pseudocode",
-  "version": "0.5.5",
-  "minAppVersion": "3.3.0",
+  "version": "0.5.6",
+  "minAppVersion": "3.0.0",
   "disabledInPublish": false,
   "backends": [
     "all"
