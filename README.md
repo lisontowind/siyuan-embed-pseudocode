@@ -86,6 +86,8 @@ Click the menu button on the left side of a Pseudocode Widget block. An option l
 
 ## Changelog
 
++ v0.5.8
+    + Add QQ group
 + v0.5.7
     + Fix: render fail when turn on codeblock line numbers
 + v0.5.6
